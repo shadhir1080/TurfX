@@ -75,7 +75,10 @@ CREATE POLICY "System settings editable by admin" ON public.system_settings FOR 
 -- Policies for profiles
 CREATE POLICY "Public profiles are viewable by everyone." ON public.profiles FOR SELECT USING (true);
 CREATE POLICY "Users can insert their own profile." ON public.profiles FOR INSERT WITH CHECK (auth.uid() = id);
-CREATE POLICY "Users can update own profile." ON public.profiles FOR UPDATE USING (auth.uid() = id);
+CREATE POLICY "Users can update own profile, Admins can update all" ON public.profiles FOR UPDATE USING (
+    auth.uid() = id OR
+    (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'admin'
+);
 
 -- Policies for turfs
 CREATE POLICY "Turfs are viewable by everyone." ON public.turfs FOR SELECT USING (true);
@@ -90,21 +93,24 @@ CREATE POLICY "Owners can delete their own turfs." ON public.turfs FOR DELETE US
 );
 
 -- Policies for bookings
-CREATE POLICY "Users can view their own bookings, Owners can view bookings for their turfs" ON public.bookings FOR SELECT USING (
+CREATE POLICY "Users can view their own bookings, Owners can view bookings for their turfs, Admins can view all" ON public.bookings FOR SELECT USING (
     auth.uid() = user_id OR 
-    auth.uid() IN (SELECT owner_id FROM public.turfs WHERE id = turf_id)
+    auth.uid() IN (SELECT owner_id FROM public.turfs WHERE id = turf_id) OR
+    (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'admin'
 );
 CREATE POLICY "Users can insert their own bookings" ON public.bookings FOR INSERT WITH CHECK (auth.uid() = user_id);
 -- Update bookings (e.g. status changes) should ideally be restricted to functions or specific roles, but for now:
-CREATE POLICY "Users and Owners can update bookings" ON public.bookings FOR UPDATE USING (
+CREATE POLICY "Users, Owners and Admins can update bookings" ON public.bookings FOR UPDATE USING (
     auth.uid() = user_id OR 
-    auth.uid() IN (SELECT owner_id FROM public.turfs WHERE id = turf_id)
+    auth.uid() IN (SELECT owner_id FROM public.turfs WHERE id = turf_id) OR
+    (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'admin'
 );
 
 -- Policies for payments
-CREATE POLICY "Users can view payments for their bookings" ON public.payments FOR SELECT USING (
+CREATE POLICY "Users can view payments for their bookings, Admins can view all" ON public.payments FOR SELECT USING (
     auth.uid() IN (SELECT user_id FROM public.bookings WHERE id = booking_id) OR
-    auth.uid() IN (SELECT t.owner_id FROM public.bookings b JOIN public.turfs t ON b.turf_id = t.id WHERE b.id = booking_id)
+    auth.uid() IN (SELECT t.owner_id FROM public.bookings b JOIN public.turfs t ON b.turf_id = t.id WHERE b.id = booking_id) OR
+    (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'admin'
 );
 -- We'll allow insert/update for edge functions mainly, but authenticated users might need to create initial record
 CREATE POLICY "Authenticated users can insert payments" ON public.payments FOR INSERT WITH CHECK (auth.role() = 'authenticated');
