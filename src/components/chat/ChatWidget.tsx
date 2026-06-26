@@ -49,55 +49,87 @@ export default function ChatWidget() {
       sender: 'user',
       timestamp: new Date(),
     }
-    setMessages(prev => [...prev, userMsg])
+    const updatedMessages = [...messages, userMsg]
+    setMessages(updatedMessages)
     const sentText = input.trim()
     setInput('')
     setLoading(true)
 
-    try {
-      const res = await fetch(RASA_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sender: 'user', message: sentText }),
-      })
-      const data = await res.json()
-      const botReplies: Message[] = (data || []).map((r: any, i: number) => ({
-        id: `${Date.now()}-${i}`,
-        text: r.text || '...',
-        sender: 'bot',
-        timestamp: new Date(),
-      }))
+    // Check if running on localhost (development environment)
+    const isLocal = typeof window !== 'undefined' && 
+      (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
 
-      if (botReplies.length === 0) {
-        botReplies.push({
+    if (isLocal) {
+      // 1. Localhost: Query the local Ollama LLM RAG endpoint
+      try {
+        const res = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ messages: updatedMessages }),
+        })
+        const data = await res.json()
+        setMessages(prev => [...prev, {
           id: Date.now().toString(),
-          text: "I'm not sure about that. Try asking about booking, cancellations, or pricing.",
+          text: data.reply || "I'm sorry, I encountered an issue generating a response.",
           sender: 'bot',
           timestamp: new Date(),
+        }])
+      } catch (err) {
+        console.error('Error connecting to local chatbot API:', err)
+        setMessages(prev => [...prev, {
+          id: Date.now().toString(),
+          text: "I couldn't reach TurfBot's local server. Please ensure Ollama is running.",
+          sender: 'bot',
+          timestamp: new Date(),
+        }])
+      }
+    } else {
+      // 2. Production Domain: Persist current Rasa / Local Heuristic fallback
+      try {
+        const res = await fetch(RASA_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sender: 'user', message: sentText }),
         })
-      }
-      setMessages(prev => [...prev, ...botReplies])
-    } catch {
-      const lower = sentText.toLowerCase()
-      let reply = ""
-      if (lower.includes('book') || lower.includes('how to book')) {
-        reply = "To book a turf, go to the 'Browse Turfs' page, select your preferred turf, choose an available date and hourly slot, choose your payment option (advance or full), and click 'Book Now'."
-      } else if (lower.includes('cancel') || lower.includes('refund')) {
-        reply = "You can cancel bookings from your User Dashboard. Full payment bookings cancelled 24 hours in advance get a 100% refund of the turf cost. Advance payments are non-refundable."
-      } else if (lower.includes('price') || lower.includes('cost') || lower.includes('commission')) {
-        reply = "Pricing is set hourly by turf owners. Weekends may have a small surcharge. A platform fee of 10% (or custom owner commission) is added to the total amount."
-      } else if (lower.includes('sport') || lower.includes('football') || lower.includes('cricket')) {
-        reply = "Various sports are available including Football, Cricket, Badminton, and Box Cricket depending on the turf you choose. You can filter by sport on the browse page."
-      } else {
-        reply = "I'm currently running in standby mode. You can book turfs, make split payments, and manage them on your dashboard. Let me know if you have questions about pricing or bookings!"
-      }
+        const data = await res.json()
+        const botReplies: Message[] = (data || []).map((r: any, i: number) => ({
+          id: `${Date.now()}-${i}`,
+          text: r.text || '...',
+          sender: 'bot',
+          timestamp: new Date(),
+        }))
 
-      setMessages(prev => [...prev, {
-        id: Date.now().toString(),
-        text: reply,
-        sender: 'bot',
-        timestamp: new Date(),
-      }])
+        if (botReplies.length === 0) {
+          botReplies.push({
+            id: Date.now().toString(),
+            text: "I'm not sure about that. Try asking about booking, cancellations, or pricing.",
+            sender: 'bot',
+            timestamp: new Date(),
+          })
+        }
+        setMessages(prev => [...prev, ...botReplies])
+      } catch {
+        const lower = sentText.toLowerCase()
+        let reply = ""
+        if (lower.includes('book') || lower.includes('how to book')) {
+          reply = "To book a turf, go to the 'Browse Turfs' page, select your preferred turf, choose an available date and hourly slot, choose your payment option (advance or full), and click 'Book Now'."
+        } else if (lower.includes('cancel') || lower.includes('refund')) {
+          reply = "You can cancel bookings from your User Dashboard. Full payment bookings cancelled 24 hours in advance get a 100% refund of the turf cost. Advance payments are non-refundable."
+        } else if (lower.includes('price') || lower.includes('cost') || lower.includes('commission')) {
+          reply = "Pricing is set hourly by turf owners. Weekends may have a small surcharge. A platform fee of 10% (or custom owner commission) is added to the total amount."
+        } else if (lower.includes('sport') || lower.includes('football') || lower.includes('cricket')) {
+          reply = "Various sports are available including Football, Cricket, Badminton, and Box Cricket depending on the turf you choose. You can filter by sport on the browse page."
+        } else {
+          reply = "I'm currently running in standby mode. You can book turfs, make split payments, and manage them on your dashboard. Let me know if you have questions about pricing or bookings!"
+        }
+
+        setMessages(prev => [...prev, {
+          id: Date.now().toString(),
+          text: reply,
+          sender: 'bot',
+          timestamp: new Date(),
+        }])
+      }
     }
     setLoading(false)
   }
