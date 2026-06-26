@@ -22,6 +22,66 @@ const initialMessage: Message = {
   timestamp: new Date(),
 }
 
+function renderInlineStyles(text: string, isBot: boolean) {
+  const parts = text.split(/(\*\*.*?\*\*)/g)
+  return parts.map((part, index) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return (
+        <strong 
+          key={index} 
+          className={`font-bold ${isBot ? 'text-emerald-400' : 'text-white'}`}
+        >
+          {part.slice(2, -2)}
+        </strong>
+      )
+    }
+    return part
+  })
+}
+
+function formatMessageText(text: string, isBot: boolean) {
+  const paragraphs = text.split(/\n\n+/)
+
+  return paragraphs.map((para, paraIndex) => {
+    const lines = para.split('\n')
+    const isBulletList = lines.length > 0 && lines.every(line => /^\s*[-*•]\s+/.test(line))
+    const isNumberedList = lines.length > 0 && lines.every(line => /^\s*\d+\.\s+/.test(line))
+
+    if (isBulletList) {
+      return (
+        <ul key={paraIndex} className="list-disc pl-4 my-1.5 space-y-1">
+          {lines.map((line, lineIndex) => {
+            const content = line.replace(/^\s*[-*•]\s+/, '')
+            return <li key={lineIndex}>{renderInlineStyles(content, isBot)}</li>
+          })}
+        </ul>
+      )
+    }
+
+    if (isNumberedList) {
+      return (
+        <ol key={paraIndex} className="list-decimal pl-4 my-1.5 space-y-1">
+          {lines.map((line, lineIndex) => {
+            const content = line.replace(/^\s*\d+\.\s+/, '')
+            return <li key={lineIndex}>{renderInlineStyles(content, isBot)}</li>
+          })}
+        </ol>
+      )
+    }
+
+    return (
+      <p key={paraIndex} className="mb-1.5 last:mb-0">
+        {lines.map((line, lineIndex) => (
+          <span key={lineIndex}>
+            {renderInlineStyles(line, isBot)}
+            {lineIndex < lines.length - 1 && <br />}
+          </span>
+        ))}
+      </p>
+    )
+  })
+}
+
 export default function ChatWidget() {
   const [isOpen, setIsOpen] = useState(false)
   const [messages, setMessages] = useState<Message[]>([initialMessage])
@@ -180,7 +240,7 @@ export default function ChatWidget() {
                       ? 'bg-primary text-primary-foreground rounded-br-sm'
                       : 'bg-white/10 text-foreground rounded-bl-sm'
                   }`}>
-                    {msg.text}
+                    {formatMessageText(msg.text, msg.sender === 'bot')}
                   </div>
                   {msg.sender === 'user' && (
                     <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center shrink-0 mt-1">
