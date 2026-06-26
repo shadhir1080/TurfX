@@ -31,6 +31,7 @@ export type Database = {
           avatar_url: string | null
           created_at: string
           is_active: boolean
+          email: string | null
         }
         Insert: {
           id: string
@@ -39,6 +40,7 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           is_active?: boolean
+          email?: string | null
         }
         Update: {
           id?: string
@@ -47,6 +49,7 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           is_active?: boolean
+          email?: string | null
         }
       }
       turfs: {

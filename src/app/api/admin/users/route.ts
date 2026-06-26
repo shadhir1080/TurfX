@@ -68,9 +68,9 @@ export async function POST(req: Request) {
 
     // Insert profile into public.profiles
     await client.query(`
-      INSERT INTO public.profiles (id, role, full_name, is_active, created_at)
-      VALUES ($1, $2, $3, true, NOW())
-    `, [userId, role, fullName])
+      INSERT INTO public.profiles (id, role, full_name, is_active, email, created_at)
+      VALUES ($1, $2, $3, true, $4, NOW())
+    `, [userId, role, fullName, email])
 
     return NextResponse.json({ success: true, message: 'User created successfully', userId })
   } catch (err: any) {
@@ -95,9 +95,9 @@ export async function PUT(req: Request) {
     // 1. Update profiles table
     await client.query(`
       UPDATE public.profiles 
-      SET full_name = $2, role = $3, is_active = $4 
+      SET full_name = $2, role = $3, is_active = $4, email = $5 
       WHERE id = $1
-    `, [id, fullName, role, isActive])
+    `, [id, fullName, role, isActive, email])
 
     // 2. Update auth.users email and raw_user_meta_data
     if (password) {
