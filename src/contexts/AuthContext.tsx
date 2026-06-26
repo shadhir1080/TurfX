@@ -14,7 +14,7 @@ interface AuthContextType {
   loading: boolean
   signUp: (email: string, password: string, fullName: string, role: 'user' | 'owner') => Promise<{ error: any; profile: Profile | null }>
   signIn: (email: string, password: string) => Promise<{ error: any; profile: Profile | null }>
-  signOut: () => Promise<void>
+  signOut: (redirectPath?: string) => Promise<void>
   refreshProfile: () => Promise<void>
 }
 
@@ -73,7 +73,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .select('*')
         .eq('id', userId)
         .single()
-      if (data) setProfile(data)
+      const prof = data as Profile | null
+      if (prof) {
+        if (prof.is_active === false) {
+          setProfile(null)
+          setLoading(false)
+          await signOut('/auth/login?error=deactivated')
+          return
+        }
+        setProfile(prof)
+      }
     } catch {
       // ignore – profile may not exist yet
     }
@@ -93,12 +102,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // If email confirmation disabled, session is returned immediately
       if (data.user && data.session) {
         syncSessionCookie(data.session.access_token)
-        // Wait briefly for trigger to create the profile row, then update role
+        // Wait briefly for trigger to create the profile row
         await new Promise(r => setTimeout(r, 800))
-        const { data: prof } = await (supabase.from('profiles') as any)
-          .update({ role, full_name: fullName })
+        const { data: prof } = await supabase
+          .from('profiles')
+          .select('*')
           .eq('id', data.user.id)
-          .select()
           .single()
         setProfile(prof)
         return { error: null, profile: prof }
@@ -137,7 +146,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  const signOut = async () => {
+  const signOut = async (redirectPath: string = '/') => {
     syncSessionCookie(null)
     setUser(null)
     setProfile(null)
@@ -166,7 +175,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } catch (e) {
         console.error('Error clearing storage:', e)
       }
-      window.location.href = '/'
+      window.location.href = redirectPath
     }
   }
 
