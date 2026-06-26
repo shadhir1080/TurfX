@@ -5,8 +5,8 @@ import ChatWidget from "@/components/chat/ChatWidget";
 
 export const metadata: Metadata = {
   title: {
-    default: "TurfBook — Book Premium Sports Turfs",
-    template: "%s | TurfBook",
+    default: "TurfX Ultra",
+    template: "%s | TurfX Ultra",
   },
   description:
     "Find and book the best sports turfs near you. Instant confirmation, transparent pricing, and a seamless booking experience.",

@@ -152,7 +152,7 @@ export default function HomePage() {
           className="text-center mb-16"
         >
           <motion.h2 variants={fadeUp} custom={0} className="text-3xl md:text-5xl font-bold text-foreground mb-4">
-            Why Choose <span className="gradient-text">TurfBook?</span>
+            Why Choose <span className="gradient-text">TurfX Ultra?</span>
           </motion.h2>
           <motion.p variants={fadeUp} custom={1} className="text-muted-foreground text-lg max-w-2xl mx-auto">
             We&apos;re making sports accessible for everyone with a seamless, end-to-end experience.
@@ -230,7 +230,7 @@ export default function HomePage() {
             Own a Turf? <span className="gradient-text">List it Today.</span>
           </h2>
           <p className="text-muted-foreground text-lg mb-8 relative z-10 max-w-xl mx-auto">
-            Join hundreds of turf owners earning more with TurfBook. Get verified, manage bookings, and receive instant payouts.
+            Join hundreds of turf owners earning more with TurfX Ultra. Get verified, manage bookings, and receive instant payouts.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center relative z-10">
             <Button size="lg" onClick={() => router.push('/auth/signup')}
@@ -252,9 +252,9 @@ export default function HomePage() {
             <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center">
               <span className="text-base">⚽</span>
             </div>
-            <span className="font-bold gradient-text">TurfBook</span>
+            <span className="font-bold gradient-text">TurfX Ultra</span>
           </div>
-          <p className="text-sm text-muted-foreground">© 2026 TurfBook. All rights reserved.</p>
+          <p className="text-sm text-muted-foreground">© 2026 TurfX Ultra. All rights reserved.</p>
         </div>
       </footer>
     </div>
