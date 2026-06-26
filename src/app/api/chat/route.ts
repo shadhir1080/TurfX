@@ -15,6 +15,11 @@ const INJECTION_PATTERNS = [
   /rule bypass/i
 ]
 
+// Cache parameters for the dynamic RAG context to optimize speed
+let cachedTurfsContext = ''
+let lastCacheTime = 0
+const CACHE_TTL = 3 * 60 * 1000 // Cache for 3 minutes
+
 export async function POST(req: Request) {
   try {
     const { messages } = await req.json()
@@ -35,23 +40,29 @@ export async function POST(req: Request) {
       }
     }
 
-    // 2. Fetch RAG Context from Database
-    let turfsContext = ''
-    try {
-      const turfsRes = await runQuery(
-        'SELECT name, sports, price_per_hour, timings, is_premium FROM public.turfs WHERE is_verified = true'
-      )
-      const turfs = turfsRes.rows || []
-      
-      turfsContext = turfs
-        .map(
-          (t) =>
-            `- ${t.name}: Sports: ${t.sports?.join(', ') || 'N/A'}, Price: INR ${t.price_per_hour}/hr, Timings: ${t.timings || 'N/A'}${t.is_premium ? ' (Premium)' : ''}`
+    // 2. Fetch RAG Context from Database (with caching optimization)
+    const now = Date.now()
+    if (!cachedTurfsContext || (now - lastCacheTime > CACHE_TTL)) {
+      try {
+        const turfsRes = await runQuery(
+          'SELECT name, sports, price_per_hour, timings, is_premium FROM public.turfs WHERE is_verified = true'
         )
-        .join('\n')
-    } catch (dbErr) {
-      console.error('Database query failed in Chat RAG:', dbErr)
-      turfsContext = 'No active turfs loaded currently.'
+        const turfs = turfsRes.rows || []
+        
+        cachedTurfsContext = turfs
+          .map(
+            (t) =>
+              `- ${t.name}: Sports: ${t.sports?.join(', ') || 'N/A'}, Price: INR ${t.price_per_hour}/hr, Timings: ${t.timings || 'N/A'}${t.is_premium ? ' (Premium)' : ''}`
+          )
+          .join('\n')
+        lastCacheTime = now
+      } catch (dbErr) {
+        console.error('Database query failed in Chat RAG:', dbErr)
+        // If query fails but we have a cache, fall back to cache. Else load notice.
+        if (!cachedTurfsContext) {
+          cachedTurfsContext = 'No active turfs loaded currently.'
+        }
+      }
     }
 
     // 3. Assemble System Prompt
@@ -75,13 +86,16 @@ Cancellation & Refund Policy:
 - Advance payments: Non-refundable under all circumstances.
 
 List of Active/Verified Turfs on TurfX Ultra:
-${turfsContext}
+${cachedTurfsContext}
 `
 
-    // 4. Map client messages to Ollama messages array format
+    // 4. Truncate conversation history to keep context small and response times fast (last 6 messages)
+    const recentMessages = messages.slice(-6)
+
+    // Map client messages to Ollama messages array format
     const ollamaMessages = [
       { role: 'system', content: systemPrompt },
-      ...messages.map((m: any) => ({
+      ...recentMessages.map((m: any) => ({
         role: m.sender === 'user' ? 'user' : 'assistant',
         content: m.text
       }))
@@ -95,7 +109,12 @@ ${turfsContext}
         body: JSON.stringify({
           model: LLM_MODEL,
           messages: ollamaMessages,
-          stream: false
+          stream: false,
+          options: {
+            temperature: 0.3,     // Low temperature for structured, factual answers
+            num_predict: 120,     // Limit token generation length to make it faster
+            num_ctx: 2048         // Keep context window small to optimize CPU/RAM load
+          }
         })
       })
 
