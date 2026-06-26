@@ -44,6 +44,9 @@ export default function SignupPage() {
     setSuccess(true)
     if (!newProfile) {
       setRequiresConfirmation(true)
+      setTimeout(() => {
+        router.push('/auth/login')
+      }, 2000)
     } else {
       setTimeout(() => {
         if (role === 'owner') router.push('/owner')
@@ -120,21 +123,13 @@ export default function SignupPage() {
                   <CheckCircle2 className="w-8 h-8 text-primary" />
                 </div>
                 <h3 className="text-xl font-bold text-foreground">
-                  {requiresConfirmation ? 'Check your email' : 'Account Created!'}
+                  Account Created!
                 </h3>
                 <p className="text-muted-foreground mt-2">
                   {requiresConfirmation
-                    ? `We sent a confirmation link to ${email}. Please check your inbox and spam folder to verify your email before signing in.`
+                    ? 'Redirecting you to Sign In...'
                     : 'Redirecting you to your dashboard...'}
                 </p>
-                {requiresConfirmation && (
-                  <Button
-                    onClick={() => router.push('/auth/login')}
-                    className="mt-6 w-full bg-primary hover:bg-primary/90 font-semibold"
-                  >
-                    Go to Sign In
-                  </Button>
-                )}
               </motion.div>
             ) : step === 1 ? (
               <motion.div key="step1" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>

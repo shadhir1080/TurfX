@@ -91,6 +91,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signUp = async (email: string, password: string, fullName: string, role: 'user' | 'owner') => {
     try {
+      // 1. Strictly check for duplicate email registration via server API
+      const checkRes = await fetch(`/api/auth/check-email?email=${encodeURIComponent(email)}`)
+      if (checkRes.ok) {
+        const checkData = await checkRes.json()
+        if (checkData.success && checkData.exists) {
+          return {
+            error: { message: 'Email is already registered. Please sign in instead.' },
+            profile: null
+          }
+        }
+      }
+
+      // 2. Proceed with Supabase sign up
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
