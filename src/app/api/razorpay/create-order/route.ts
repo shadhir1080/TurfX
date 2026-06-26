@@ -21,7 +21,7 @@ export async function POST(request: Request) {
         [bookingId, mockOrderId, 'created']
       )
 
-      return NextResponse.json({ orderId: mockOrderId, amount, currency, isDemo: true })
+      return NextResponse.json({ orderId: mockOrderId, amount, currency, isDemo: true, keyId: keyId || 'rzp_test_T5IWlvsFHy0oB' })
     }
 
     try {
@@ -46,24 +46,8 @@ export async function POST(request: Request) {
         [bookingId, order.id, 'created']
       )
 
-      return NextResponse.json({ orderId: order.id, amount, currency, isDemo: false })
+      return NextResponse.json({ orderId: order.id, amount, currency, isDemo: false, keyId })
     } catch (razorpayError: any) {
-      // If Razorpay API returns 401 Unauthorized (Authentication failed), fallback to Demo Mode!
-      if (
-        razorpayError.statusCode === 401 || 
-        razorpayError.message?.includes('Authentication failed') || 
-        (razorpayError.error && razorpayError.error.description?.includes('Authentication failed'))
-      ) {
-        console.warn('Razorpay authentication failed. Auto-falling back to Demo Mode.')
-        const mockOrderId = `mock_order_${Math.random().toString(36).substring(2, 11)}`
-        
-        await runQuery(
-          'INSERT INTO public.payments (booking_id, razorpay_order_id, status) VALUES ($1, $2, $3)',
-          [bookingId, mockOrderId, 'created']
-        )
-
-        return NextResponse.json({ orderId: mockOrderId, amount, currency, isDemo: true })
-      }
       throw razorpayError
     }
   } catch (error: any) {

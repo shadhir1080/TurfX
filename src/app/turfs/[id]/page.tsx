@@ -218,7 +218,7 @@ export default function TurfDetailPage({ params }: { params: { id: string } }) {
 
       // Live/Test Razorpay Flow using the Checkout SDK
       const options: any = {
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_T5IWlvsFHy0oB',
+        key: orderData.keyId || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_T5IWlvsFHy0oB',
         amount: orderData.amount * 100, // in paise
         currency: orderData.currency || 'INR',
         name: 'Turf Booking',
