@@ -1,6 +1,6 @@
 import { Client } from 'pg'
 
-const connectionString = 'postgresql://postgres:6UcKzGB7fLniLE6U@db.cryhojcfpzdtnnpamzwf.supabase.co:5432/postgres'
+const connectionString = 'postgresql://postgres.cryhojcfpzdtnnpamzwf:6UcKzGB7fLniLE6U@aws-1-ap-northeast-1.pooler.supabase.com:6543/postgres'
 
 export async function runQuery(queryText: string, params: any[] = []) {
   const client = new Client({ connectionString })

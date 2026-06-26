@@ -3,7 +3,7 @@ const { Client } = require('pg');
 
 const supabaseUrl = 'https://cryhojcfpzdtnnpamzwf.supabase.co';
 const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNyeWhvamNmcHpkdG5ucGFtendmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0Mjk4NTksImV4cCI6MjA5NTAwNTg1OX0.tBLKggpgwCAf28lruWGHWrlticuGrAsgxHjUHQNbebo';
-const connectionString = 'postgresql://postgres:6UcKzGB7fLniLE6U@db.cryhojcfpzdtnnpamzwf.supabase.co:5432/postgres';
+const connectionString = 'postgresql://postgres.cryhojcfpzdtnnpamzwf:6UcKzGB7fLniLE6U@aws-1-ap-northeast-1.pooler.supabase.com:6543/postgres';
 
 const email = 'admin@turfx.com';
 const password = 'Admin@TurfX2026';
